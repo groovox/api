@@ -1,0 +1,20 @@
+schema: ./src/schema/generated/schema.graphql
+documents: ./test/**/*.ops.gql
+generates:
+  ./test/sdk/operation.generated.ts:
+    plugins:
+      - typescript
+      - typescript-operations
+      - typescript-generic-sdk
+      - add:
+          content: // @ts-nocheck
+    config:
+      skipTypename: true
+      scalars:
+        Date: string
+        Time: string
+        DateTime: string
+        UUID: string
+        File: File
+        Void: null | undefined
+        SemVer: string

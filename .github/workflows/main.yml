@@ -1,0 +1,79 @@
+name: main
+on:
+  # - push
+  # - pull_request
+  - workflow_dispatch
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [16, 18]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - run: npm run lint
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [16, 18]
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    env:
+      GROOVOX__DATABASE_URL: postgres://postgres:postgres@localhost:5432/groovox
+      NODE_ENV: development
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run db:deploy
+      - run: npm run build
+      - run: npm run test
+  migrate:
+    name: migrate
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v3
+      - run: npm ci
+      - run: npm run db:dev -- --name temp
+        env:
+          GROOVOX__DATABASE_URL: postgres://postgres:postgres@localhost:5432/groovox
+      - uses: actions/upload-artifact@v3
+        with:
+          name: migrations
+          path: prisma/migrations
