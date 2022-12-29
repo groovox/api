@@ -1,8 +1,7 @@
 name: main
 on:
-  # - push
-  # - pull_request
-  - workflow_dispatch
+  - push
+  - pull_request
 jobs:
   lint:
     name: lint
@@ -72,7 +71,7 @@ jobs:
       - run: npm ci
       - run: npm run db:dev -- --name temp
         env:
-          GROOVOX__DATABASE_URL: postgres://postgres:postgres@localhost:5432/groovox
+          GROOVOX__DATABASE__URL: postgres://postgres:postgres@localhost:5432/groovox
       - uses: actions/upload-artifact@v3
         with:
           name: migrations

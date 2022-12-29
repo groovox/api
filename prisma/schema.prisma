@@ -1,8 +1,211 @@
 datasource db {
   provider = "postgresql"
-  url      = env("GROOVOX__DATABASE_URL")
+  url      = env("GROOVOX__DATABASE__URL")
 }
 
 generator client {
   provider = "prisma-client-js"
+}
+
+model Tag {
+  id         String      @id @default(uuid()) @db.Uuid
+  slug       String      @unique
+  name       String      @unique
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @default(now()) @map("updated_at")
+  category   TagCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  categoryId String      @map("category_id") @db.Uuid
+  shows      Show[]
+  Movie      Movie?      @relation(fields: [movieId], references: [id])
+  movieId    String?     @db.Uuid
+
+  @@map("tag")
+}
+
+model TagCategory {
+  id        String   @id @default(uuid()) @db.Uuid
+  slug      String   @unique
+  name      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+  tags      Tag[]
+
+  @@map("tag_category")
+}
+
+model Person {
+  id          String         @id @default(uuid()) @db.Uuid
+  familyName  String         @map("family_name")
+  givenName   String         @map("given_name")
+  sortName    String         @map("sort_name")
+  sex         String?
+  birthDate   DateTime?      @map("birth_date") @db.Date
+  deathDate   DateTime?      @map("death_date") @db.Date
+  description String
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @default(now()) @map("updated_at")
+  groups      GroupMember[]
+  shows       ShowStaff[]
+  seasons     SeasonStaff[]
+  episodes    EpisodeStaff[]
+  movies      MovieStaff[]
+
+  @@map("person")
+}
+
+model Group {
+  id          String        @id @default(uuid()) @db.Uuid
+  name        String
+  description String
+  formDate    DateTime?     @map("form_date") @db.Date
+  disbandDate DateTime?     @map("disband_date") @db.Date
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @default(now()) @map("updated_at")
+  members     GroupMember[]
+
+  @@map("group")
+}
+
+model GroupMember {
+  group     Group     @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  groupId   String    @db.Uuid
+  person    Person    @relation(fields: [personId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  personId  String    @db.Uuid
+  joinDate  DateTime? @map("join_date") @db.Date
+  leaveDate DateTime? @map("leave_date") @db.Date
+
+  @@id([groupId, personId])
+  @@map("group_member")
+}
+
+model Studio {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String
+  sortName    String    @map("sort_name")
+  description String
+  formDate    DateTime? @map("form_date") @db.Date
+  disbandDate DateTime? @map("disband_date") @db.Date
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @default(now()) @map("updated_at")
+  shows       Show[]
+  movies      Movie[]
+
+  @@map("studio")
+}
+
+model Show {
+  id            String      @id @default(uuid()) @db.Uuid
+  name          String
+  sortName      String      @map("sort_name")
+  taglines      String[]
+  description   String
+  contentRating String      @map("content_rating")
+  airedDate     DateTime?   @map("aired_date") @db.Date
+  rating        Int
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @default(now()) @map("updated_at")
+  studios       Studio[]
+  tags          Tag[]
+  seasons       Season[]
+  staffs        ShowStaff[]
+
+  @@map("show")
+}
+
+model Season {
+  id          String        @id @default(uuid()) @db.Uuid
+  name        String
+  sortName    String        @map("sort_name")
+  taglines    String[]
+  description String
+  airedDate   DateTime?     @map("aired_date") @db.Date
+  order       Int
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @default(now()) @map("updated_at")
+  Show        Show          @relation(fields: [showId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  showId      String        @db.Uuid
+  episodes    Episode[]
+  staffs      SeasonStaff[]
+
+  @@unique([showId, order])
+  @@map("season")
+}
+
+model Episode {
+  id          String         @id @default(uuid()) @db.Uuid
+  name        String
+  sortName    String         @map("sort_name")
+  description String
+  airedDate   DateTime?      @map("aired_date") @db.Date
+  order       Int
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @default(now()) @map("updated_at")
+  season      Season         @relation(fields: [seasonId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  seasonId    String         @db.Uuid
+  staffs      EpisodeStaff[]
+
+  @@unique([seasonId, order])
+  @@map("episode")
+}
+
+model ShowStaff {
+  show     Show   @relation(fields: [showId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  showId   String @db.Uuid
+  person   Person @relation(fields: [personId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  personId String @db.Uuid
+  role     String
+
+  @@id([showId, personId, role])
+  @@map("show_staff")
+}
+
+model SeasonStaff {
+  season   Season @relation(fields: [seasonId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  seasonId String @db.Uuid
+  person   Person @relation(fields: [personId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  personId String @db.Uuid
+  role     String
+
+  @@id([seasonId, personId, role])
+  @@map("season_staff")
+}
+
+model EpisodeStaff {
+  episode   Episode @relation(fields: [episodeId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  episodeId String  @db.Uuid
+  person    Person  @relation(fields: [personId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  personId  String  @db.Uuid
+  role      String
+
+  @@id([episodeId, personId, role])
+  @@map("episode_staff")
+}
+
+model Movie {
+  id            String       @id @default(uuid()) @db.Uuid
+  name          String
+  sortName      String       @map("sort_name")
+  description   String
+  contentRating String       @map("content_rating")
+  airedDate     DateTime?    @map("aired_date") @db.Date
+  rating        Int
+  taglines      String[]
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @default(now()) @map("updated_at")
+  studios       Studio[]
+  tags          Tag[]
+  staffs        MovieStaff[]
+
+  @@map("movie")
+}
+
+model MovieStaff {
+  movie    Movie  @relation(fields: [movieId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  movieId  String @db.Uuid
+  person   Person @relation(fields: [personId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  personId String @db.Uuid
+  role     String
+
+  @@id([movieId, personId, role])
+  @@map("movie_staff")
 }
