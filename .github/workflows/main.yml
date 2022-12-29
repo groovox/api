@@ -37,7 +37,7 @@ jobs:
         ports:
           - 5432:5432
     env:
-      GROOVOX__DATABASE_URL: postgres://postgres:postgres@localhost:5432/groovox
+      GROOVOX__DATABASE__URL: postgres://postgres:postgres@localhost:5432/groovox
       NODE_ENV: development
     steps:
       - uses: actions/checkout@v3
