@@ -11,21 +11,24 @@ type ServerContext = {
 
 type UserContext = Record<string, unknown>;
 
+const pluginName = "@groovox/graphql";
+
 const plugin = fastifyPlugin(
   app => {
+    const logger = app.log.child({ plugin: pluginName });
     const yoga = createYoga<ServerContext, UserContext>({
       logging: {
-        debug: (...args) => args.forEach(arg => app.log.debug(arg)),
-        info: (...args) => args.forEach(arg => app.log.info(arg)),
-        warn: (...args) => args.forEach(arg => app.log.warn(arg)),
-        error: (...args) => args.forEach(arg => app.log.error(arg))
+        debug: (...args) => args.forEach(arg => logger.debug(arg)),
+        info: (...args) => args.forEach(arg => logger.info(arg)),
+        warn: (...args) => args.forEach(arg => logger.warn(arg)),
+        error: (...args) => args.forEach(arg => logger.error(arg))
       }
     });
     app.decorate("gql", yoga);
   },
   {
     fastify: "4.x",
-    name: "@groovox/graphql",
+    name: pluginName,
     dependencies: ["@groovox/database"]
   }
 );
